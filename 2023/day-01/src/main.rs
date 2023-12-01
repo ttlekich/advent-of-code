@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, string};
+use std::{collections::HashMap, fs};
 fn main() {
     let calibration_sum_1 = part_1();
     println!("Calibration Sum 1: {:?}", calibration_sum_1);
@@ -64,16 +64,12 @@ fn inner_parse(
     lookups: &HashMap<String, &str>,
 ) -> () {
     let max = chars.len();
-    if current > max {
-        if start + 2 > max {
-            return;
-        }
-        return inner_parse(chars, start + 1, start + 2, state, lookups);
-    }
     if start > max {
         return;
     }
-
+    if current > max {
+        return inner_parse(chars, start + 1, start + 2, state, lookups);
+    }
     let current_chars = &chars[start..current];
     let current_s: String = current_chars.iter().collect();
     let num = current_s.parse::<usize>();
