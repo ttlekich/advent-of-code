@@ -2,6 +2,7 @@ use std::{collections::HashMap, fs};
 
 fn main() {
     part_1();
+    part_2();
 }
 
 fn part_1() {
@@ -15,14 +16,12 @@ fn part_1() {
         .lines()
         .map(|line| {
             let game_id = parse_game_id(line);
-            println!("====={:?}======", game_id);
             let sets = parse_game_sets(line);
             for set in sets.iter() {
                 let plays: Vec<&str> = set.trim().split(",").collect();
                 let mut scores: HashMap<String, usize> = HashMap::new();
                 for play in plays.iter() {
                     let parts: Vec<&str> = play.trim().split(" ").collect();
-                    println!("{:?}", parts);
                     let count = parts[0].parse::<usize>().unwrap();
                     let color = parts[1];
 
@@ -31,12 +30,8 @@ fn part_1() {
                         Some(s) => scores.insert(String::from(color), count + s),
                         None => scores.insert(String::from(color), count),
                     };
-                    println!("{:?}", scores);
                 }
-                println!("{:?}", scores);
-                println!("{:?}", limits);
                 let is_possible = check_is_possible(&scores, &limits);
-                println!("{:?}", is_possible);
                 if !is_possible {
                     return None;
                 }
@@ -76,4 +71,37 @@ fn check_is_possible(scores: &HashMap<String, usize>, limits: &HashMap<String, u
         continue;
     }
     return true;
+}
+
+fn part_2() {
+    let sum: usize = fs::read_to_string("part_1_input.txt")
+        .unwrap()
+        .lines()
+        .map(|line| {
+            let sets = parse_game_sets(line);
+            let mut scores: HashMap<String, usize> = HashMap::new();
+            for set in sets.iter() {
+                let plays: Vec<&str> = set.trim().split(",").collect();
+                for play in plays.iter() {
+                    let parts: Vec<&str> = play.trim().split(" ").collect();
+                    let count = parts[0].parse::<usize>().unwrap();
+                    let color = parts[1];
+                    let existing_score = scores.get(&String::from(color));
+                    if existing_score.is_none() {
+                        scores.insert(String::from(color), count);
+                    } else {
+                        if count > *existing_score.unwrap() {
+                            scores.insert(String::from(color), count);
+                        }
+                    }
+                }
+            }
+            let mut power = 1;
+            for (_, value) in scores.iter() {
+                power = power * value;
+            }
+            power
+        })
+        .sum();
+    println!("{:?}", sum);
 }
