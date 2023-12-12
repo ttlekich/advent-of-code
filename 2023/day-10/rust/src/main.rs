@@ -2,7 +2,7 @@ use std::{collections::HashSet, fs, ops, vec};
 
 fn main() {
     let file = fs::read_to_string("1.txt").unwrap();
-    part_1(&file);
+    // part_1(&file);
     part_2(&file);
 }
 
@@ -228,7 +228,7 @@ fn find_start(m: &Vec<Vec<Node>>) -> Coordinate {
     start
 }
 
-fn part_2(file: &str) -> Vec<Node> {
+fn part_2(file: &str) {
     let rr = file.split("\n").collect::<Vec<&str>>();
     let m = rr
         .iter()
@@ -278,5 +278,38 @@ fn part_2(file: &str) -> Vec<Node> {
     }
     println!("{:?}", path.len() / 2);
 
-    let mut count = 0;
+    let map = m.into_iter().map(|xs| {
+        xs.into_iter().map(|x| match x {
+            x if path.contains(&x) => x,
+            x if !path.contains(&x) => Node {
+                valid_moves: vec![],
+                value: ".".to_string(),
+                location: x.location,
+            },
+            _ => panic!(),
+        })
+    });
+
+    let mut inside = false;
+    let total = map
+        .into_iter()
+        .flatten()
+        .filter(|i| match i.value.as_str() {
+            "." => inside,
+            "|" => {
+                inside = !inside;
+                false
+            }
+            "F" => {
+                inside = !inside;
+                false
+            }
+            "J" => {
+                inside = !inside;
+                false
+            }
+            _ => false,
+        })
+        .count();
+    println!("{:?}", total)
 }
