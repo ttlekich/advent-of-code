@@ -1,10 +1,12 @@
-use std::{fs, ops, vec};
+use std::{collections::HashSet, fs, ops, vec};
 
 fn main() {
     let file = fs::read_to_string("1.txt").unwrap();
     part_1(&file);
+    part_2(&file);
 }
 
+#[derive(Debug)]
 struct Stack<T> {
     stack: Vec<T>,
 }
@@ -22,20 +24,19 @@ impl<T> Stack<T> {
         self.stack.push(item)
     }
 
-    fn is_empty(&self) -> bool {
-        self.stack.is_empty()
+    fn is_empty(&mut self) -> bool {
+        self.stack.len() == 0
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 struct Node {
     valid_moves: Vec<Move>,
     value: String,
-    visited: bool,
     location: Coordinate,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 struct Coordinate {
     x: i32,
     y: i32,
@@ -52,7 +53,7 @@ impl ops::Add<Coordinate> for Coordinate {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 enum Move {
     North,
     South,
@@ -71,7 +72,7 @@ impl Move {
     }
 }
 
-fn part_1(file: &str) {
+fn part_1(file: &str) -> Vec<Node> {
     let rr = file.split("\n").collect::<Vec<&str>>();
     let m = rr
         .iter()
@@ -79,40 +80,91 @@ fn part_1(file: &str) {
         .map(|(x, r)| {
             r.chars()
                 .enumerate()
-                .map(|(y, s)| parse_node(s, x as i32, y as i32))
+                .map(|(y, s)| parse_node(s, y as i32, x as i32))
                 .collect::<Vec<Node>>()
         })
         .collect::<Vec<Vec<Node>>>();
     let start_coordinate: Coordinate = find_start(&m);
     let start_node = &m[start_coordinate.x as usize][start_coordinate.y as usize];
+
     println!("Start {:?}", start_node);
     let mut stack: Stack<Node> = Stack::new();
-    let initial_nodes: Vec<Node> = get_adjacent_nodes(&m, start_node);
-    for node in initial_nodes {
-        stack.push(node);
-    }
+    let mut path: Vec<Node> = vec![];
+    let mut visited: HashSet<Node> = HashSet::new();
     loop {
-        let mut current_node = stack.pop().unwrap();
-        println!("Current {:?}", current_node);
-        if current_node.value == start_node.value {
+        let current_node = {
+            if stack.is_empty() {
+                start_node.clone()
+            } else {
+                (stack.pop().unwrap()).clone()
+            }
+        };
+        if current_node == *start_node && path.len() > 1 {
             break;
         }
-        current_node.visited = true;
-        let adjacent_nodes: Vec<Node> = get_adjacent_nodes(&m, &current_node);
-        for node in adjacent_nodes {
-            stack.push(node);
+        if !visited.contains(&current_node) {
+            path.push(current_node.clone());
+        } else {
+            continue;
+        }
+        visited.insert(current_node.clone());
+        let children: Vec<Node> = get_adjacent_nodes(&m, &current_node);
+        for child in children {
+            if visited.contains(&child) {
+                continue;
+            }
+            stack.push(child.clone());
         }
     }
+
+    for p in path.iter() {
+        println!("{:?}", p);
+    }
+    println!("{:?}", path.len() / 2);
+    path
 }
 
 fn get_adjacent_nodes(matrix: &Vec<Vec<Node>>, current_node: &Node) -> Vec<Node> {
-    current_node
-        .valid_moves
-        .iter()
-        .map(|m| m.value() + current_node.location)
-        .map(|c| (&matrix[c.x as usize][c.y as usize]).clone())
-        .filter(|n| !n.visited)
-        .collect::<Vec<Node>>()
+    let mut moves: Vec<Node> = vec![];
+
+    for m in &current_node.valid_moves {
+        let c = m.value() + current_node.location;
+        if !is_valid_coordinate(c, matrix) {
+            continue;
+        }
+        let new_node = &matrix[c.y as usize][c.x as usize];
+        match m {
+            Move::East => {
+                if new_node.valid_moves.contains(&Move::West) {
+                    moves.push(new_node.clone())
+                }
+                continue;
+            }
+            Move::North => {
+                if new_node.valid_moves.contains(&Move::South) {
+                    moves.push(new_node.clone())
+                }
+                continue;
+            }
+            Move::West => {
+                if new_node.valid_moves.contains(&Move::East) {
+                    moves.push(new_node.clone())
+                }
+                continue;
+            }
+            Move::South => {
+                if new_node.valid_moves.contains(&Move::North) {
+                    moves.push(new_node.clone())
+                }
+                continue;
+            }
+        }
+    }
+    moves
+}
+
+fn is_valid_coordinate(c: Coordinate, m: &Vec<Vec<Node>>) -> bool {
+    c.x >= 0 && c.y >= 0 && c.x < m.len() as i32 && c.y < m.len() as i32
 }
 
 fn parse_node(s: char, x: i32, y: i32) -> Node {
@@ -120,49 +172,41 @@ fn parse_node(s: char, x: i32, y: i32) -> Node {
         '|' => Node {
             value: "|".to_string(),
             valid_moves: vec![Move::North, Move::South],
-            visited: false,
             location: Coordinate { x: x, y: y },
         },
         '-' => Node {
             value: "-".to_string(),
             valid_moves: vec![Move::East, Move::West],
-            visited: false,
             location: Coordinate { x: x, y: y },
         },
         'L' => Node {
             value: "L".to_string(),
             valid_moves: vec![Move::North, Move::East],
-            visited: false,
             location: Coordinate { x: x, y: y },
         },
         'J' => Node {
             value: "J".to_string(),
             valid_moves: vec![Move::North, Move::West],
-            visited: false,
             location: Coordinate { x: x, y: y },
         },
         '7' => Node {
             value: "7".to_string(),
             valid_moves: vec![Move::South, Move::West],
-            visited: false,
             location: Coordinate { x: x, y: y },
         },
         'F' => Node {
             value: "F".to_string(),
             valid_moves: vec![Move::South, Move::East],
-            visited: false,
             location: Coordinate { x: x, y: y },
         },
         '.' => Node {
             value: ".".to_string(),
             valid_moves: vec![],
-            visited: false,
             location: Coordinate { x: x, y: y },
         },
         'S' => Node {
             value: "S".to_string(),
             valid_moves: vec![Move::North, Move::East, Move::South, Move::West],
-            visited: false,
             location: Coordinate { x: x, y: y },
         },
         _ => panic!(),
@@ -182,4 +226,57 @@ fn find_start(m: &Vec<Vec<Node>>) -> Coordinate {
         }
     }
     start
+}
+
+fn part_2(file: &str) -> Vec<Node> {
+    let rr = file.split("\n").collect::<Vec<&str>>();
+    let m = rr
+        .iter()
+        .enumerate()
+        .map(|(x, r)| {
+            r.chars()
+                .enumerate()
+                .map(|(y, s)| parse_node(s, y as i32, x as i32))
+                .collect::<Vec<Node>>()
+        })
+        .collect::<Vec<Vec<Node>>>();
+    let start_coordinate: Coordinate = find_start(&m);
+    let start_node = &m[start_coordinate.x as usize][start_coordinate.y as usize];
+
+    println!("Start {:?}", start_node);
+    let mut stack: Stack<Node> = Stack::new();
+    let mut path: Vec<Node> = vec![];
+    let mut visited: HashSet<Node> = HashSet::new();
+    loop {
+        let current_node = {
+            if stack.is_empty() {
+                start_node.clone()
+            } else {
+                (stack.pop().unwrap()).clone()
+            }
+        };
+        if current_node == *start_node && path.len() > 1 {
+            break;
+        }
+        if !visited.contains(&current_node) {
+            path.push(current_node.clone());
+        } else {
+            continue;
+        }
+        visited.insert(current_node.clone());
+        let children: Vec<Node> = get_adjacent_nodes(&m, &current_node);
+        for child in children {
+            if visited.contains(&child) {
+                continue;
+            }
+            stack.push(child.clone());
+        }
+    }
+
+    for p in path.iter() {
+        println!("{:?}", p);
+    }
+    println!("{:?}", path.len() / 2);
+
+    let mut count = 0;
 }
