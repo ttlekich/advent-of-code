@@ -1,4 +1,4 @@
-use std::{fmt::Display, fs, ops::Add, thread::current};
+use std::{fmt::Display, fs, ops::Add};
 
 fn main() {
     let input = fs::read_to_string("input.txt").unwrap();
@@ -59,23 +59,26 @@ fn part_1(input: &str) -> () {
 
 fn part_2(input: &str) -> () {
     let instructions = parse_instructions_2(&input);
-    for instruction in &instructions {
-        println!("{:?}", instruction);
-    }
-
-    let mut current = Point { x: 0, y: 0 };
-    let mut points = vec![current.clone()];
+    let mut current = (0, 0);
+    let mut prev = (0, 0);
+    let mut s: i64 = 0;
+    let mut count: i64 = 0;
     for instruction in instructions {
-        let current_points = get_points(instruction, current.clone());
-        points.append(&mut current_points.clone());
-        current = current_points.last().unwrap().clone();
+        match instruction.direction {
+            Direction::Down => current.1 += instruction.length,
+            Direction::Right => current.0 += instruction.length,
+            Direction::Up => current.1 -= instruction.length,
+            Direction::Left => current.0 -= instruction.length,
+        }
+
+        s += current.1 * prev.0 - current.0 * prev.1;
+        count += instruction.length;
+        prev = current;
     }
 
-    let area = find_area(&points);
+    let result = s.abs() / 2 + count / 2 + 1;
 
-    let interior = (area + 1 as f64 - (0.5) * points.len() as f64).floor() as i64;
-
-    println!("{}", points.len() as i64 + interior);
+    println!("{}", result);
 }
 
 fn find_area(points: &Vec<Point>) -> f64 {
