@@ -1,3 +1,4 @@
+import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list.{map}
@@ -8,6 +9,32 @@ import simplifile.{read}
 
 pub fn main() {
   part1()
+  part2()
+}
+
+pub fn part2() {
+  let filepath = "./input/part1"
+  let assert Ok(file) = read(from: filepath)
+  let #(first, second) =
+    split(file, on: "\n")
+    |> list.flat_map(fn(line) {
+      split(line, on: "   ")
+      |> map(int.parse)
+      |> map(fn(x) { result.unwrap(x, 0) })
+      |> list.window_by_2
+    })
+    |> list.unzip
+
+  let counts =
+    list.fold(first, dict.new(), fn(a, x) {
+      dict.insert(a, x, list.count(second, fn(y) { x == y }))
+    })
+
+  let _ =
+    first
+    |> list.map(fn(y) { int.multiply(y, result.unwrap(dict.get(counts, y), 0)) })
+    |> fn(x) { list.fold(x, 0, int.add) }
+    |> io.debug
 }
 
 fn part1() {
