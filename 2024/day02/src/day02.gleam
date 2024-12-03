@@ -28,6 +28,7 @@ fn part1(file) {
   |> list.map(diff)
   |> list.map(check)
   |> count
+  |> io.debug
 }
 
 fn parse(file) {
