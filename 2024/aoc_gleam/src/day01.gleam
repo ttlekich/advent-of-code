@@ -7,13 +7,15 @@ import gleam/result
 import gleam/string.{split}
 import simplifile.{read}
 
-pub fn main() {
+pub fn day01() {
+  io.println("===== Day 01 =====")
+
   part1()
   part2()
 }
 
 pub fn part2() {
-  let filepath = "./input/part1"
+  let filepath = "./input/day01/part1"
   let assert Ok(file) = read(from: filepath)
   let #(first, second) =
     split(file, on: "\n")
@@ -38,7 +40,7 @@ pub fn part2() {
 }
 
 fn part1() {
-  let filepath = "./input/part1"
+  let filepath = "./input/day01/part1"
   let assert Ok(file) = read(from: filepath)
   let _ =
     split(file, on: "\n")

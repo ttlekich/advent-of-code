@@ -6,8 +6,10 @@ import gleam/result
 import gleam/string
 import simplifile
 
-pub fn main() {
-  let filepath = "./input/part1"
+pub fn day03() {
+  io.println("===== Day 03 =====")
+
+  let filepath = "./input/day03/part1"
   let assert Ok(file) = simplifile.read(from: filepath)
 
   io.print("part 1: ")
