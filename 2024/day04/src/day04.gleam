@@ -7,11 +7,32 @@ import gleam/string
 import simplifile
 
 pub fn main() {
-  let filepath = "./input/part1"
-  let assert Ok(file) = simplifile.read(from: filepath)
-
+  let filepath1 = "./input/part1"
+  let assert Ok(file) = simplifile.read(from: filepath1)
   io.print("part 1: ")
   part1(file)
+
+  let filepath2 = "./input/part1"
+  let assert Ok(file) = simplifile.read(from: filepath2)
+  io.print("part 2: ")
+  part2(file)
+}
+
+fn part2(file) {
+  let lines =
+    file
+    |> to_array_array
+
+  let assert Ok(first) = list.first(lines)
+  let n_columns = list.length(first)
+  let n_rows = list.length(lines)
+  let xs = list.range(from: 0, to: n_columns)
+  let ys = list.range(from: 0, to: n_rows)
+  let matrix = to_matrix(lines)
+
+  list.flat_map(ys, fn(y) { list.map(xs, fn(x) { check2(matrix, x, y) }) })
+  |> count
+  |> io.debug
 }
 
 fn part1(file) {
@@ -32,6 +53,59 @@ fn part1(file) {
 fn check(matrix, x, y) {
   list.map(directions, fn(d) { check_direction(matrix, x, y, d, chars) })
   |> count
+}
+
+fn check2(matrix, x, y) {
+  let current_char = dict.get(matrix, #(x, y))
+  case current_char == Ok("A") {
+    True -> {
+      check_for_x(matrix, x, y)
+    }
+    _ -> 0
+  }
+}
+
+fn check_for_x(matrix, x, y) {
+  let west_chars =
+    [SouthWest, NorthWest]
+    |> list.map(fn(d) { get_char(matrix, x, y, d) })
+  let east_chars =
+    [SouthEast, NorthEast]
+    |> list.map(fn(d) { get_char(matrix, x, y, d) })
+  case west_chars {
+    [Ok("M"), Ok("M")] -> {
+      case east_chars {
+        [Ok("S"), Ok("S")] -> 1
+        _ -> 0
+      }
+    }
+    [Ok("S"), Ok("S")] -> {
+      case east_chars {
+        [Ok("M"), Ok("M")] -> 1
+        _ -> 0
+      }
+    }
+    [Ok("S"), Ok("M")] -> {
+      case east_chars {
+        [Ok("S"), Ok("M")] -> 1
+        _ -> 0
+      }
+    }
+    [Ok("M"), Ok("S")] -> {
+      case east_chars {
+        [Ok("M"), Ok("S")] -> 1
+        _ -> 0
+      }
+    }
+    _ -> 0
+  }
+}
+
+fn get_char(matrix, x, y, d) {
+  let direction_pair = direction_to_pair(d)
+  let new_x = int.add(pair.first(direction_pair), x)
+  let new_y = int.add(pair.second(direction_pair), y)
+  dict.get(matrix, #(new_x, new_y))
 }
 
 fn check_direction(matrix, x, y, direction, chars) {
