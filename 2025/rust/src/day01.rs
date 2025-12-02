@@ -54,7 +54,6 @@ pub fn part02() {
                 np => (np, count + clicks),
             };
 
-            println!("{}, {}, {}", rotation, next_state.0, next_state.1);
             next_state
         });
     println!("part02: {}, {}", result.0, result.1)
